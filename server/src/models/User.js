@@ -222,6 +222,7 @@ userSchema.pre('save', async function() {
     } catch (error) {
         throw new Error(`Erreur lors du hashage du mot de passe: ${error.message}`);
     }
+
 });
 
 userSchema.pre('save', function() {
