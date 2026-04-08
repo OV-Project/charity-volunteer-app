@@ -1,5 +1,8 @@
 // models/User.js
 import mongoose from 'mongoose';
+import bcrypt from 'bcryptjs';
+
+
 
 const userSchema = new mongoose.Schema({
     // ========== CHAMPS COMMUNS ==========
@@ -7,7 +10,6 @@ const userSchema = new mongoose.Schema({
         type: String,
         required: true,
         unique: true,
-        lowercase: true,
         trim: true,
         match: [/^\S+@\S+\.\S+$/, 'Email invalide']
     },
@@ -210,17 +212,28 @@ const userSchema = new mongoose.Schema({
 });
 
 // ========== MIDDLEWARE POUR NETTOYER LES PROFILS ==========
+userSchema.pre('save', async function() {
+    // Ne pas rehasher si le mot de passe n'est pas modifié
+    if (!this.isModified('password')) return;
+
+    try {
+        const salt = await bcrypt.genSalt(parseInt(process.env.BCRYPT_ROUNDS) || 10);
+        this.password = await bcrypt.hash(this.password, salt);
+    } catch (error) {
+        throw new Error(`Erreur lors du hashage du mot de passe: ${error.message}`);
+    }
+});
+
 userSchema.pre('save', function() {
+
     // Supprimer orgProfile si ce n'est pas une organisation
     if (this.role !== 'organization') {
         this.orgProfile = undefined;
     }
-
     // Supprimer adminProfile si ce n'est pas un admin
     if (this.role !== 'admin') {
         this.adminProfile = undefined;
     }
-
     // Supprimer volunteerProfile si ce n'est pas un bénévole
     if (this.role !== 'volunteer') {
         this.volunteerProfile = undefined;
@@ -241,6 +254,28 @@ userSchema.methods.addVolunteerHours = async function(hours) {
         await this.save();
     }
 };
+
+// backend/src/models/User.js
+
+// Méthode comparePassword plus robuste
+userSchema.methods.comparePassword = async function(candidate) {
+    // Vérifier que candidate est une string
+    if (!candidate || typeof candidate !== 'string') {
+        return false;
+    }
+
+    // Vérifier que this.password existe et est une string
+    if (!this.password || typeof this.password !== 'string') {
+        return false;
+    }
+
+    try {
+        return await bcrypt.compare(candidate, this.password);
+    } catch (error) {
+        console.error('Error comparing passwords:', error);
+        return false;
+    }
+}
 
 userSchema.methods.isActive = function() {
     return this.status === 'active' && this.isEmailVerified;
@@ -275,6 +310,8 @@ userSchema.statics.findOrganizationsNear = function(lng, lat, maxDistance = 2000
 };
 
 // ========== INDEX ==========
+userSchema.index({ 'volunteerProfile.homeLocation': '2dsphere' });
+userSchema.index({ 'orgProfile.location': '2dsphere' });
 userSchema.index({ email: 1 }, { unique: true });
 userSchema.index({ role: 1, status: 1 });
 userSchema.index({ createdAt: -1 });
