@@ -4,13 +4,13 @@ import dotenv from 'dotenv';
 import cors from 'cors';
 import helmet from 'helmet';
 import morgan from 'morgan';
-import database from './src/config/database.js'; // Import correct
+import database from './config/database.js'; // Import correct
+import MissionRoutes from './routes/MissionRoute.js';
 
 dotenv.config();
 
 const app = express();
-
-// === MIDDLEWARES ===
+app.use(express.json({ limit: '10mb' }));// === MIDDLEWARES ===
 app.use(helmet({
   crossOriginResourcePolicy: { policy: "cross-origin" }
 }));
@@ -25,6 +25,7 @@ app.use(cors({
 app.use(express.json({ limit: '10mb' })); // Limiter taille payload
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 app.use(morgan('combined')); // 'combined' donne plus d'infos
+app.use("/api/missions",MissionRoutes);
 
 // === ROUTES ===
 app.get('/health', (req, res) => {
@@ -78,5 +79,10 @@ process.on('SIGTERM', async () => {
   await database.disconnect();
   process.exit(0);
 });
+
+// SIMPLE API TO TEST//
+//app.get("/api/missions",(req,res) => {
+  //res.status(200).json({id:1 , mission : "done"})
+//})
 
 startServer();

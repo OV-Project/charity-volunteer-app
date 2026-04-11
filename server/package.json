@@ -13,7 +13,6 @@
     "test:JWT": "node -r dotenv/config src/tests/unit/utils/testJWT.js",
     "test:user": "node src/tests/unit/models/user_test.js",
     "test:mission": "node src/tests/unit/models/mission_test.js"
-
   },
   "keywords": [],
   "author": "",
@@ -25,6 +24,7 @@
     "crypto-js": "^4.2.0",
     "dotenv": "^17.3.1",
     "express": "^5.2.1",
+    "express-async-handler": "^1.2.0",
     "express-validator": "^7.3.1",
     "helmet": "^8.1.0",
     "jsonwebtoken": "^9.0.3",
@@ -37,5 +37,4 @@
     "nodemon": "^3.1.14",
     "supertest": "^7.2.2"
   }
-
 }
